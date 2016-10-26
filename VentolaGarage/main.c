@@ -21,7 +21,6 @@
 
 /* i.e. uint8_t <variable_name>; */
 
-
 /******************************************************************************/
 /* Main Program                                                               */
 
@@ -51,11 +50,23 @@ void main(void) {
     bool ricircoloPrenotato=false;
     while (1) {
         if (accensione > 0) {
-            __delay_ms(DELAY_STEP);
-            accensione -= DELAY_STEP;
-            if (accensione <= 0) {
+            conta=0;
+            while(SW_PORTA && conta < DELAY_SW_PORTA_INTERRUZIONE) {
+                __delay_ms(DELAY_STEP);
+                conta += DELAY_STEP;
+            }
+
+            if(conta >= DELAY_SW_PORTA_INTERRUZIONE) {
                 OUTPUT_PORT=0;
                 accensione = 0;
+            }
+            else {
+                __delay_ms(DELAY_STEP);
+                accensione -= DELAY_STEP;
+                if (accensione <= 0) {
+                    OUTPUT_PORT=0;
+                    accensione = 0;
+                }
             }
         }
         else {
