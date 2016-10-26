@@ -1,0 +1,10 @@
+__stringtab: STRING, 81 0 6
+__stringdata: STRING, 87 0 11
+_putch: CODE, 120 0 1
+_ConfigureOscillator: CODE, 121 0 1
+_main: CODE, 22 0 37
+_InitApp: CODE, 98 0 11
+__initialization: CODE, 16 0 4
+_isr: CODE, 109 0 11
+_printf: CODE, 59 0 22
+Total: 104

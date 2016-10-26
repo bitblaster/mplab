@@ -1,0 +1,8 @@
+1) Si esce dall'ascensore e si PREME il tasto -> luce ACCESA per 2 minuti o SPENTA appena viene CHIUSA la porta
+2) Si APRE la porta mentre la luce è SPENTA -> luce ACCESA per 2 minuti, anche se viene chiusa la porta
+3) Si CHIUDE la porta mentre la luce è SPENTA -> luce ACCESA per 2 minuti
+
+spiegazioni:
+1) caso tipico di uscita
+2) caso tipico di ingresso
+3) caso in cui la porta è rimasta spalancata e si entra chiudendola. La luce si accende per evitare di dover andare fino al tasto e tornare a chiudere la porta.
