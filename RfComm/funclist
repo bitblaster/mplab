@@ -1,0 +1,22 @@
+PL12: CODE, 2006 0 32
+PL8: CODE, 1619 0 38
+_eecpymem: CODE, 1072 0 24
+__stringtab: STRING, 1 0 6
+_TEA_KEY: STRING, 7 0 16
+_ConfigureOscillator: CODE, 1042 0 1
+_main: CODE, 1219 0 131
+___eetoc: CODE, 1052 0 8
+___lmul: CODE, 1168 0 51
+_InitApp: CODE, 1096 0 34
+__initialization: CODE, 2038 0 8
+_decrypt: CODE, 1693 0 133
+___ctoee: CODE, 1045 0 7
+_encrypt: CODE, 1350 0 127
+_getOutputPortValue: CODE, 1043 0 2
+_setOutputPortValue: CODE, 1060 0 12
+PL2: CODE, 1477 0 142
+PL10: CODE, 1657 0 36
+PL4: CODE, 1826 0 142
+PL6: CODE, 1968 0 38
+_memcpyee: CODE, 1130 0 38
+Total: 1026
