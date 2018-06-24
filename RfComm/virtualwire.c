@@ -1,53 +1,48 @@
-#include	<htc.h>
+//#pragma warning disable 1090
+#include <xc.h>         /* XC8 General Include File */
 #include	"virtualwire.h"
 #include	"crc16.h"
 #include	"string.h"
+#include "user.h"
 
 /*************************************
  *	Tunable parameters
  */
 
-/* Transmit and Receive port bits */
-#define RxData GP3
-#define TxData GP4
-#define RxTris TRISB3
-#define TxTris TRISB4
-
-#include "common.h"
-#define OVERSAMPLING	8
+#define OVERSAMPLING	4
 
 /*
  *	Don't change anything else
  ************************************/
 
-/*
 // -----------------------------------------------------------------------------
 // TX
 // -----------------------------------------------------------------------------
-uint8_t vw_tx_len = 0; // Number of symbols in vw_tx_buf to be sent
-uint8_t vw_tx_index = 0; // Index of the next symbol to send, [0..vw_tx_len)
-bit vw_tx_header; // flag to decide if transmitting header or payload
+static uint8_t vw_tx_len = 0; // Number of symbols in vw_tx_buf to be sent
+static uint8_t vw_tx_index = 0; // Index of the next symbol to send, [0..vw_tx_len)
+static bit vw_tx_header; // flag to decide if transmitting header or payload
 
-uint8_t vw_tx_sample = 0; // Sample number for each bit (oversampling)
-uint8_t vw_tx_bit = 0; // Bit number of next bit to send
-bit vw_tx_enabled = 0; // Flag tx enabled?
+static uint8_t vw_tx_sample = 0; // Sample number for each bit (oversampling)
+static uint8_t vw_tx_bit_num = 0; // Bit number of next bit to send
+static bit vw_tx_enabled = 0; // Flag tx enabled?
+static int8_t vw_tx_repeat_count = 0; // Number of times to repeat the transmission
 
-uint8_t vw_tmr0_value;
+static uint8_t vw_tmr0_value;
 
 // -----------------------------------------------------------------------------
 // RX
 // -----------------------------------------------------------------------------
-bit vw_rx_done = 0; // flag new message is available
-uint16_t vw_rx_bits = 0; // last 12 bits to look for the start symbol
-bit vw_rx_enabled = 0; // flag receiver enabled
-bit vw_rx_enabled_last = 0; // flag receiver enabled reposition
-uint8_t vw_rx_bit_count = 0; // bits of message received (0..12)
-uint8_t vw_rx_count = 0; // expected message length
-uint8_t vw_rx_len = 0; // incoming buffer used so far
+static volatile bit vw_rx_done = 0; // flag new message is available
+static uint16_t vw_rx_bits = 0; // last 12 bits to look for the start symbol
+static bit vw_rx_enabled = 0; // flag receiver enabled
+static bit vw_rx_enabled_last = 0; // flag receiver enabled reposition
+static uint8_t vw_rx_bit_count = 0; // bits of message received (0..12)
+static uint8_t vw_rx_count = 0; // expected message length
+static uint8_t vw_rx_len = 0; // incoming buffer used so far
 
-uint8_t vw_rx_sample = 0; // current receiver sample
-uint8_t vw_rx_last_sample = 0; // last receiver sample
-bit vw_rx_active = 0; // start sequence found and now decoding data
+static uint8_t vw_rx_sample = 0; // current receiver sample
+static uint8_t vw_rx_last_sample = 0; // last receiver sample
+static bit vw_rx_active = 0; // start sequence found and now decoding data
 
 // -----------------------------------------------------------------------------
 // PLL
@@ -72,26 +67,26 @@ bit vw_rx_active = 0; // start sequence found and now decoding data
 #define VW_RAMP_INC_RETARD (VW_RAMP_INC-VW_RAMP_ADJUST)
 /// Internal ramp adjustment parameter
 #define VW_RAMP_INC_ADVANCE (VW_RAMP_INC+VW_RAMP_ADJUST)
-uint8_t vw_rx_pll_ramp = 0;
-uint8_t vw_rx_integrator = 0;
+static uint8_t vw_rx_pll_ramp = 0;
+static uint8_t vw_rx_integrator = 0;
 
 // 4 bit to 6 bit symbol converter table
 // Used to convert the high and low nybbles of the transmitted data
 // into 6 bit symbols for transmission. Each 6-bit symbol has 3 1s and 3 0s 
 // with at most 3 consecutive identical bits
-const uint8_t symbols[] = {
+static const uint8_t symbols[] = {
     0xd, 0xe, 0x13, 0x15, 0x16, 0x19, 0x1a, 0x1c,
     0x23, 0x25, 0x26, 0x29, 0x2a, 0x2c, 0x32, 0x34
 };
 
-#define VW_HEADER_LEN 8
 #define VW_MAX_PAYLOAD VW_MAX_MESSAGE_LEN-3	/// The maximum payload length
 
-const uint8_t vw_tx_buf_header[VW_HEADER_LEN]
-        = {0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x38, 0x2c};
+static const uint8_t vw_tx_buf_header[] = {0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x38, 0x2c};
 
-static bank1 uint8_t vw_tx_buf[VW_MAX_MESSAGE_LEN * 2];
+static uint8_t vw_tx_buf[VW_MAX_MESSAGE_LEN * 2];
 
+
+/*
 static bit _calc_timer0_prescaler(uint16_t brate, uint16_t *prescaler_value, uint8_t *prescaler_bits, uint8_t *k_tmr0)
 {
     const uint16_t prescaler_factor[] = {1, 2, 4, 8, 16, 32, 64, 128, 256}; // 1 = no prescaler needed
@@ -101,7 +96,7 @@ static bit _calc_timer0_prescaler(uint16_t brate, uint16_t *prescaler_value, uin
     for (pindex = 0; pindex < 8; pindex++)
     {
         *prescaler_value = prescaler_factor[pindex];
-        aux_tmr0 = FOSC / (4 * (*prescaler_value) * brate * OVERSAMPLING);
+        aux_tmr0 = _XTAL_FREQ / (4 * (*prescaler_value) * brate * OVERSAMPLING);
 
         if (aux_tmr0 < 256)
         {
@@ -116,35 +111,36 @@ static bit _calc_timer0_prescaler(uint16_t brate, uint16_t *prescaler_value, uin
 
     // failed (bitrate too low for the current XTAL)
     return 0;
-}
+}*/
 
-void vw_setup(uint16_t brate)
+//void vw_setup(uint16_t brate)
+void vw_setup(void)
 {
-    uint16_t prescaler_value;
-    uint8_t prescaler_bits;
-
-    // setup pins
-    RxTris = 1;
-    TxTris = 0;
+//    uint16_t prescaler_value;
+//    uint8_t prescaler_bits;
 
     // idle output pin
     TxData = 0;
 
     // Calculate the timer values (warning 8 bit only) 
-    _calc_timer0_prescaler(brate, &prescaler_value, &prescaler_bits, &vw_tmr0_value);
+    vw_tmr0_value = 4000000 / (4 * 1 * 600 * 8); // 208
+/*    _calc_timer0_prescaler(brate, &prescaler_value, &prescaler_bits, &vw_tmr0_value);
 
     if (prescaler_value > 1)
     {
         // prescaler needed
-        OPTION &= 0xF0; // all 4 right bits to 0 (PSA=0 -> prescaler for timer0)
-        OPTION |= prescaler_bits;
+        OPTION_REGbits.PSA=0; // prescaler attivo su Timer0
+        OPTION_REGbits.PS=prescaler_bits; // prescaler per Timer0 impostato a 1:256. Timer0 fa ~61 interrupt/sec
     }
-
+*/
+    
     T0CS = 0; // Set timer mode for Timer0.
     TMR0 = (2 - vw_tmr0_value); // +2 as timer stops for 2 cycles
     // when writing to TMR0
-    TMR0IE = 1; // Enable the Timer0 interrupt.
-    GIE = 1;
+//    TMR0IE = 1; // Enable the Timer0 interrupt.
+//    GIE = 1;
+    INTCONbits.GIE=1; //Interrupt abilitati globalmente
+    INTCONbits.T0IE=1; //Interrupt abilitato per Timer0
 }
 
 // ----------------------------------------------------------------------------
@@ -165,7 +161,7 @@ void vw_tx_stop(void)
 void vw_tx_start(void)
 {
     vw_tx_index = 0;
-    vw_tx_bit = 0;
+    vw_tx_bit_num = 0;
     vw_tx_sample = 0;
 
     vw_tx_header = 1;
@@ -174,7 +170,7 @@ void vw_tx_start(void)
     vw_tx_enabled = 1;
 }
 
-bit vw_send(const char *buf, uint8_t len)
+bit vw_send(const char *buf, uint8_t len, uint8_t repeat_count)
 {
     uint8_t i;
     uint8_t index = 0;
@@ -213,8 +209,19 @@ bit vw_send(const char *buf, uint8_t len)
     p[index++] = symbols[(crc >> 8) & 0xf];
 
     // Total number of 6-bit symbols to send
-    vw_tx_len = index + VW_HEADER_LEN;
+    vw_tx_len = index + sizeof(vw_tx_buf_header);
+    
+    // Number of times to repeat the transmission
+    vw_tx_repeat_count = repeat_count;
 
+    // Initial burst to help cheap receivers to adjust gain
+    for(i=0; i < 4; i++) {
+        TxData=1;
+        __delay_ms(10);
+        TxData=0;
+        __delay_ms(6);
+    }
+    
     // Start the low level interrupt handler sending symbols
     vw_tx_start();
 
@@ -244,9 +251,10 @@ uint8_t vw_symbol_6to4(uint8_t symbol)
     uint8_t i;
 
     // Linear search :-( Could have a 64 byte reverse lookup table?
-    for (i = 0; i < 16; i++)
+    for (i = 0; i < sizeof(symbols); i++) {
         if (symbol == symbols[i])
             return i;
+    }
 
     return 0; // Not found
 }
@@ -288,7 +296,6 @@ void vw_pll(void)
             vw_rx_bits |= 0x800;
 
         vw_rx_pll_ramp -= VW_RX_RAMP_LEN;
-        vw_rx_integrator = 0; // Clear the integral for the next cycle
 
         if (vw_rx_active)
         {
@@ -299,9 +306,14 @@ void vw_pll(void)
                 // Have 12 bits of encoded message == 1 byte encoded
                 // Decode as 2 lots of 6 bits into 2 lots of 4 bits
                 // The 6 lsbits are the high nybble
-                uint8_t this_byte =
-                        (vw_symbol_6to4(vw_rx_bits & 0x3f)) << 4
-                        | vw_symbol_6to4(vw_rx_bits >> 6);
+                
+                // Instruction replaced with the following block for ram constraints reasons
+//               uint8_t this_byte = (vw_symbol_6to4(vw_rx_bits & 0x3f)) << 4 | vw_symbol_6to4(vw_rx_bits >> 6);
+                vw_rx_integrator = vw_rx_bits;
+                vw_rx_integrator >>= 6;
+                uint8_t this_byte = vw_symbol_6to4(vw_rx_bits & 0x3f);
+                this_byte <<= 4;
+                this_byte |= this_byte;
 
                 // The first decoded byte is the byte count of the following message
                 // the count includes the byte count and the 2 trailing FCS bytes
@@ -330,8 +342,7 @@ void vw_pll(void)
                 vw_rx_bit_count = 0;
             }
         }
-            // Not in a message, see if we have a start symbol
-        else if (vw_rx_bits == 0xb38)
+        else if (vw_rx_bits == 0xb38) // Not in a message, see if we have a start symbol
         {
             // Have start symbol, start collecting message
             vw_rx_active = 1;
@@ -339,6 +350,8 @@ void vw_pll(void)
             vw_rx_len = 0;
             vw_rx_done = 0; // Too bad if you missed the last message
         }
+        
+        vw_rx_integrator = 0; // Clear the integral for the next cycle
     }
 }
 
@@ -382,10 +395,13 @@ void vw_rx_start(void)
     vw_rx_enabled_last = 1;
 }
 
-void vw_isr_tmr0(void)
+void interrupt vw_isr_tmr0(void)
 {
+    if(!T0IF)
+        return;
+    
     TMR0 += -vw_tmr0_value + 4;
-    TMR0IF = 0;
+    T0IF = 0;
 
     if (vw_rx_enabled && !vw_tx_enabled)
         vw_rx_sample = RxData;
@@ -396,14 +412,14 @@ void vw_isr_tmr0(void)
     {
         if (vw_tx_header)
         {
-            TxData = (vw_tx_buf_header[vw_tx_index] & (1 << vw_tx_bit++)) ? 1 : 0;
-            if (vw_tx_bit >= 6)
+            TxData = (vw_tx_buf_header[vw_tx_index] & (1 << vw_tx_bit_num++)) ? 1 : 0;
+            if (vw_tx_bit_num >= 6)
             {
-                vw_tx_bit = 0;
+                vw_tx_bit_num = 0;
                 vw_tx_index++;
             }
 
-            if (vw_tx_index >= 8)
+            if (vw_tx_index >= sizeof(vw_tx_buf_header))
             {
                 // end of header, now switch to the else part
                 vw_tx_header = 0;
@@ -418,15 +434,21 @@ void vw_isr_tmr0(void)
             // since the last bit)
             if (vw_tx_index >= vw_tx_len)
             {
-                vw_tx_stop(); // stop tx
-                vw_rx_enabled = vw_rx_enabled_last; // re-enable rx if already active
+                vw_tx_repeat_count--;
+                if(vw_tx_repeat_count > 0) {
+                    vw_tx_start(); // repeat the transmission
+                }
+                else {
+                    vw_tx_stop(); // stop tx
+                    vw_rx_enabled = vw_rx_enabled_last; // re-enable rx if already active
+                }
             }
             else
             {
-                TxData = (vw_tx_buf[vw_tx_index] & (1 << vw_tx_bit++)) ? 1 : 0;
-                if (vw_tx_bit >= 6)
+                TxData = (vw_tx_buf[vw_tx_index] & (1 << vw_tx_bit_num++)) ? 1 : 0;
+                if (vw_tx_bit_num >= 6)
                 {
-                    vw_tx_bit = 0;
+                    vw_tx_bit_num = 0;
                     vw_tx_index++;
                 }
             }
@@ -434,7 +456,7 @@ void vw_isr_tmr0(void)
 
     }
 
-    if (vw_tx_sample > 7)
+    if (vw_tx_sample >= OVERSAMPLING)
         vw_tx_sample = 0;
 
 
@@ -442,5 +464,3 @@ void vw_isr_tmr0(void)
     if (vw_rx_enabled && !vw_tx_enabled)
         vw_pll();
 }
-
-*/

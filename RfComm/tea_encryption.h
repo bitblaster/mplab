@@ -33,8 +33,9 @@
 
 //void btea(uint32_t *v, int n, uint32_t const key[4]);
 
-void encrypt(uint32_t *data, uint8_t len);
-void decrypt(uint32_t *data, uint8_t len);
+void encrypt(uint32_t *data);
+void decrypt(uint32_t *data);
+//void decrypt(uint32_t v[2]);
 //void encipher(unsigned int num_rounds, uint32_t v[2], uint32_t const key[4]);
 //void decipher(unsigned int num_rounds, uint32_t v[2], uint32_t const key[4]);
 

@@ -1,0 +1,5 @@
+Provato a:
+- rendere globale il crc di virtualWire e togliere parametro/valori di ritorno da _crc_ccitt_update, senza successo (+ codice + ram)
+- ridurre la dimensione di vw_tx_buf_header a 3, con controllo dell'indice, senza successo (+ codice + ram)
+- eliminare parametro len da encrypt e decrypt, inoltre eliminando il ciclo interno e fissando l'operatività a 2 DWORD, con successo (- codice - ram)
+- precalcolare valore del prescaler in vw_setup, con successo (- codice ~300 byte)

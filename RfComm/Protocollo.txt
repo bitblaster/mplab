@@ -1,0 +1,7 @@
+Device:
+    All'accensione il device attende deviceid x 0,5 sec, poi invia lo stato corrente
+    Se c'è un nuovo messaggio:
+        Se è un messaggio diretto al device verrà mandato ack o nack
+        Se è un'azione da centrale
+            OFF: spegne
+            ON: accende

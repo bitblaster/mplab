@@ -29,15 +29,20 @@
 #ifndef VIRTUALWIRE_H
 #define VIRTUALWIRE_H
 
-#include <htc.h>
+#include <xc.h>         /* XC8 General Include File */
 #include "stdint.h"
 
-#define VW_MAX_MESSAGE_LEN 7   // Maximum number of bytes in a message,
+/* Transmit and Receive port bits */
+#define RxData GP4
+#define TxData GP1
+
+#define VW_MAX_MESSAGE_LEN 11   // Maximum number of bytes in a message,
                                 // including the byte count and FCS (3 bytes)
 
 
-void vw_setup(uint16_t brate);
-bit vw_send(const char *buf, uint8_t len);
+//void vw_setup(uint16_t brate);
+void vw_setup(void);
+bit vw_send(const char *buf, uint8_t len, uint8_t repeat_count);
 void vw_wait_tx(void);
 
 bit vw_have_message(void);
@@ -46,6 +51,6 @@ bit vw_recv(uint8_t *buf, uint8_t *len);
 void vw_rx_stop(void);
 void vw_rx_start(void);
 
-void vw_isr_tmr0(void);
+void interrupt vw_isr_tmr0(void);
 
 #endif
