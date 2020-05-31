@@ -1,0 +1,27 @@
+#
+# Generated - do not edit!
+#
+# NOCDDL
+#
+CND_BASEDIR=`pwd`
+# XC8_PIC12F675 configuration
+CND_ARTIFACT_DIR_XC8_PIC12F675=dist/XC8_PIC12F675/production
+CND_ARTIFACT_NAME_XC8_PIC12F675=TelecomandoCancello.production.hex
+CND_ARTIFACT_PATH_XC8_PIC12F675=dist/XC8_PIC12F675/production/TelecomandoCancello.production.hex
+CND_PACKAGE_DIR_XC8_PIC12F675=${CND_DISTDIR}/XC8_PIC12F675/package
+CND_PACKAGE_NAME_XC8_PIC12F675=telecomandocancello.tar
+CND_PACKAGE_PATH_XC8_PIC12F675=${CND_DISTDIR}/XC8_PIC12F675/package/telecomandocancello.tar
+# XC8_PIC12F675_Simulator configuration
+CND_ARTIFACT_DIR_XC8_PIC12F675_Simulator=dist/XC8_PIC12F675_Simulator/production
+CND_ARTIFACT_NAME_XC8_PIC12F675_Simulator=TelecomandoCancello.production.hex
+CND_ARTIFACT_PATH_XC8_PIC12F675_Simulator=dist/XC8_PIC12F675_Simulator/production/TelecomandoCancello.production.hex
+CND_PACKAGE_DIR_XC8_PIC12F675_Simulator=${CND_DISTDIR}/XC8_PIC12F675_Simulator/package
+CND_PACKAGE_NAME_XC8_PIC12F675_Simulator=telecomandocancello.tar
+CND_PACKAGE_PATH_XC8_PIC12F675_Simulator=${CND_DISTDIR}/XC8_PIC12F675_Simulator/package/telecomandocancello.tar
+# XC8_PIC12F683 configuration
+CND_ARTIFACT_DIR_XC8_PIC12F683=dist/XC8_PIC12F683/production
+CND_ARTIFACT_NAME_XC8_PIC12F683=TelecomandoCancello.production.hex
+CND_ARTIFACT_PATH_XC8_PIC12F683=dist/XC8_PIC12F683/production/TelecomandoCancello.production.hex
+CND_PACKAGE_DIR_XC8_PIC12F683=${CND_DISTDIR}/XC8_PIC12F683/package
+CND_PACKAGE_NAME_XC8_PIC12F683=telecomandocancello.tar
+CND_PACKAGE_PATH_XC8_PIC12F683=${CND_DISTDIR}/XC8_PIC12F683/package/telecomandocancello.tar

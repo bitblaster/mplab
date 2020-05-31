@@ -30,7 +30,7 @@ void InitApp(void)
     GPIO=0;
 
     // Registro TRISIO (quali porte input e quali output)
-    TRISIO=0b00010001; // GP0 e GP4 input
+    TRISIO=0b00000000; // GP0 e GP4 input
 
     CMCONbits.CM=0b111; // Comparatore disattivato
     ANSEL=0; // Porte impostate tutte su digitale
@@ -45,7 +45,7 @@ void InitApp(void)
     
     // Registro WPU (weak pull-up)
     // Le configurazioni dei weak pull-up devono stare dopo quelle del TRISIO
-    WPU=0b00010001; // weak pull-up abilitati al su GP0 e GP4
+    WPU=0b00000000; // weak pull-up abilitati al su GP0 e GP4
 
     GPIO=0;
 }

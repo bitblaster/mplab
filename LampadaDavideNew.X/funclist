@@ -1,0 +1,13 @@
+_eecpymem: CODE, 1859 0 44
+_PIN_MANAGER_Initialize: CODE, 1827 0 15
+_WDT_Initialize: CODE, 1780 0 4
+_main: CODE, 1966 0 78
+___eetoc: CODE, 1815 0 12
+__initialization: CODE, 2044 0 0
+_OSCILLATOR_Initialize: CODE, 1788 0 7
+_SYSTEM_Initialize: CODE, 1795 0 9
+___ctoee: CODE, 1804 0 11
+_getOutputPortValue: CODE, 1784 0 4
+_setOutputPortValue: CODE, 1842 0 17
+_memcpyee: CODE, 1903 0 63
+Total: 264

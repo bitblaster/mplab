@@ -1,14 +1,7 @@
-_eecpymem: CODE, 760 0 33
-_ConfigureOscillator: CODE, 689 0 1
-_main: CODE, 840 0 165
-___eetoc: CODE, 699 0 9
-_InitApp: CODE, 732 0 28
+_ConfigureOscillator: CODE, 554 0 1
+_main: CODE, 571 0 450
+_InitApp: CODE, 555 0 16
+_bit0: CODE, 0 0 0
 __initialization: CODE, 1021 0 0
-___ctoee: CODE, 692 0 7
-_restoreOutputValue: CODE, 708 0 11
-_getOutputPortValue: CODE, 690 0 2
-_setOutputPortValue: CODE, 719 0 13
-PL2: CODE, 1005 0 10
-PL4: CODE, 1015 0 6
-_memcpyee: CODE, 793 0 47
-Total: 332
+_bit1: CODE, 0 0 0
+Total: 467

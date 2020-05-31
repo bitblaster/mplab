@@ -11,7 +11,7 @@
 //#define DEVICE_ADDRESS 0x0001
 
 #define _XTAL_FREQ 4000000
-#define __delay_ms(x) _delay((unsigned long)((x)*(_XTAL_FREQ/4000.0)))
+//#define __delay_ms(x) _delay((unsigned long)((x)*1000 /*(_XTAL_FREQ/4000.0) */))
 
 /******************************************************************************/
 /* User Function Prototypes                                                   */

@@ -1,42 +1,98 @@
-/******************************************************************************/
-/* Files to Include                                                           */
-/******************************************************************************/
+/**
+  Generated Main Source File
 
-#if defined(__XC)
-#include <xc.h>         /* XC8 General Include File */
-#elif defined(HI_TECH_C)
-#include <htc.h>        /* HiTech General Include File */
+  Company:
+    Microchip Technology Inc.
+
+  File Name:
+    main.c
+
+  Summary:
+    This is the main file generated using PIC10 / PIC12 / PIC16 / PIC18 MCUs
+
+  Description:
+    This header file provides implementations for driver APIs for all modules selected in the GUI.
+    Generation Information :
+        Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.65.2
+        Device            :  PIC12F1840
+        Driver Version    :  2.00
+*/
+
+/*
+    (c) 2018 Microchip Technology Inc. and its subsidiaries. 
+    
+    Subject to your compliance with these terms, you may use Microchip software and any 
+    derivatives exclusively with Microchip products. It is your responsibility to comply with third party 
+    license terms applicable to your use of third party software (including open source software) that 
+    may accompany Microchip software.
+    
+    THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER 
+    EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE, INCLUDING ANY 
+    IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND FITNESS 
+    FOR A PARTICULAR PURPOSE.
+    
+    IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE, 
+    INCIDENTAL OR CONSEQUENTIAL LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND 
+    WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP 
+    HAS BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO 
+    THE FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL 
+    CLAIMS IN ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT 
+    OF FEES, IF ANY, THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS 
+    SOFTWARE.
+*/
+
+#include "mcc_generated_files/mcc.h"
+
+#define OUTPUT_PORT RA2
+
+#ifdef PRODUZIONE
+#define DELAY_ACCENSIONE 325000 // 5 min
+#else
+#define DELAY_ACCENSIONE 10000
 #endif
 
-#include <stdint.h>        /* For uint8_t definition */
-#include <stdbool.h>       /* For true/false definition */
+//#define DELAY_SW_ACCENSIONE 40
+#define DELAY_STEP 10
 
-#include "system.h"        /* System funct/params, like osc/peripheral config */
-#include "user.h"          /* User funct/params, such as InitApp */
+eeprom unsigned char outputValue=0;
 
-/******************************************************************************/
-/* User Global Variable Declaration                                           */
-/******************************************************************************/
+unsigned char getOutputPortValue(void) {
+    return outputValue;
+}
 
+void setOutputPortValue(unsigned char value) {
+    outputValue=value;
+    OUTPUT_PORT=value;
+}
 
-/* i.e. uint8_t <variable_name>; */
+void restoreOutputValue(void) {
+    OUTPUT_PORT=outputValue;
+}
 
+/*
+                         Main application
+ */
+void main(void)
+{
+    // initialize the device
+    SYSTEM_Initialize();
 
-/******************************************************************************/
-/* Main Program                                                               */
+    // When using interrupts, you need to set the Global and Peripheral Interrupt Enable bits
+    // Use the following macros to:
 
-/******************************************************************************/
+    // Enable the Global Interrupts
+    //INTERRUPT_GlobalInterruptEnable();
 
-void main(void) {
-/* Configure the oscillator for the device */
-    ConfigureOscillator();
+    // Enable the Peripheral Interrupts
+    //INTERRUPT_PeripheralInterruptEnable();
 
-    /* Initialize I/O and Peripherals for application */
-    InitApp();
+    // Disable the Global Interrupts
+    //INTERRUPT_GlobalInterruptDisable();
 
-    __delay_ms(100);
+    // Disable the Peripheral Interrupts
+    //INTERRUPT_PeripheralInterruptDisable();
 
-    // IN DEBUG METTERE UN BREAKPOINT QUI E METTERE ALTA SW_ASCENSORE (GP0)
+   // IN DEBUG METTERE UN BREAKPOINT QUI E METTERE ALTA SW_ASCENSORE (GP0)
     bool acceso=getOutputPortValue();
     if(!acceso) {
         setOutputPortValue(true);
@@ -56,4 +112,6 @@ void main(void) {
 
     NOP();
 }
-
+/**
+ End of File
+*/

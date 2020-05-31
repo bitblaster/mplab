@@ -48,6 +48,7 @@ void vw_wait_tx(void);
 bit vw_have_message(void);
 bit vw_recv(uint8_t *buf, uint8_t *len);
 
+uint8_t vw_symbol_6to4(uint8_t symbol);
 void vw_rx_stop(void);
 void vw_rx_start(void);
 

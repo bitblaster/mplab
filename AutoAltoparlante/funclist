@@ -1,0 +1,8 @@
+_ConfigureOscillator: CODE, 689 0 1
+_main: CODE, 718 0 289
+_InitApp: CODE, 690 0 28
+__initialization: CODE, 1021 0 0
+PL2: CODE, 1007 0 5
+PL4: CODE, 1012 0 4
+PL6: CODE, 1016 0 5
+Total: 332

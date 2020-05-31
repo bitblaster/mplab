@@ -4,7 +4,7 @@
 #define REMOTE_PORT GP4
 #define LOCAL_PORT  GP0
 #define PROGRAM_PORT GP5
-#define OUTPUT_PORT GP2
+#define OUTPUT_PORT GP1
 
 #define DELAY_REMOTE_OFF 0
 #define DELAY_REMOTE_ON 400

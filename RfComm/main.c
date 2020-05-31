@@ -51,9 +51,9 @@ void sendMessage(RfAction action, RfStatus status) {
     msg.message_counter = ++lastMessageCounter;
         
     encrypt(&msg);
-#ifdef DEBUG
+#ifdef LOCAL_LED
     LED_PORT=1;
-    __delay_ms(600);
+    //__delay_ms(600);
     LED_PORT=0;
     __delay_ms(200);
 #endif
@@ -75,7 +75,20 @@ void main(void) {
     InitApp();
 
     vw_setup();
-     
+
+/*uint16_t vw_rx_bits=0x1925, vw_rx_integrator;
+
+uint8_t this_byte1 = (vw_symbol_6to4(vw_rx_bits & 0x3f)) << 4 | vw_symbol_6to4(vw_rx_bits >> 6);
+if(this_byte1 > 23) LED_PORT=1;
+
+vw_rx_integrator = vw_rx_bits;
+vw_rx_integrator >>= 6;
+uint8_t this_byte = vw_symbol_6to4(vw_rx_bits & 0x3f);
+this_byte <<= 4;
+this_byte |= this_byte;
+
+if(this_byte > 23) LED_PORT=1;
+*/
     LED_PORT=1;
     __delay_ms(1000);
     LED_PORT=0;
@@ -114,7 +127,7 @@ void main(void) {
             len = sizeof(RfMessage);
             if(vw_recv(&msg, &len)) {
                 vw_rx_stop();
-#ifdef DEBUG
+#ifdef LOCAL_LEDs
                 LED_PORT=1;
                 __delay_ms(200);
                 LED_PORT=0;

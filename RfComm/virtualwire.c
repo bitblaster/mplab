@@ -1,15 +1,15 @@
 //#pragma warning disable 1090
 #include <xc.h>         /* XC8 General Include File */
-#include	"virtualwire.h"
-#include	"crc16.h"
-#include	"string.h"
+#include "virtualwire.h"
+#include "crc16.h"
+#include "string.h"
 #include "user.h"
 
 /*************************************
  *	Tunable parameters
  */
 
-#define OVERSAMPLING	4
+#define OVERSAMPLING	8
 
 /*
  *	Don't change anything else
@@ -123,7 +123,7 @@ void vw_setup(void)
     TxData = 0;
 
     // Calculate the timer values (warning 8 bit only) 
-    vw_tmr0_value = 4000000 / (4 * 1 * 600 * 8); // 208
+    vw_tmr0_value = _XTAL_FREQ / (4 * 1 * 600 * 8); // 208
 /*    _calc_timer0_prescaler(brate, &prescaler_value, &prescaler_bits, &vw_tmr0_value);
 
     if (prescaler_value > 1)
@@ -217,9 +217,9 @@ bit vw_send(const char *buf, uint8_t len, uint8_t repeat_count)
     // Initial burst to help cheap receivers to adjust gain
     for(i=0; i < 4; i++) {
         TxData=1;
-        __delay_ms(10);
+        __delay_ms(8);
         TxData=0;
-        __delay_ms(6);
+        __delay_ms(4);
     }
     
     // Start the low level interrupt handler sending symbols
@@ -308,12 +308,12 @@ void vw_pll(void)
                 // The 6 lsbits are the high nybble
                 
                 // Instruction replaced with the following block for ram constraints reasons
-//               uint8_t this_byte = (vw_symbol_6to4(vw_rx_bits & 0x3f)) << 4 | vw_symbol_6to4(vw_rx_bits >> 6);
-                vw_rx_integrator = vw_rx_bits;
-                vw_rx_integrator >>= 6;
-                uint8_t this_byte = vw_symbol_6to4(vw_rx_bits & 0x3f);
-                this_byte <<= 4;
-                this_byte |= this_byte;
+               uint8_t this_byte = (vw_symbol_6to4(vw_rx_bits & 0x3f)) << 4 | vw_symbol_6to4(vw_rx_bits >> 6);
+//                vw_rx_integrator = vw_rx_bits;
+//                vw_rx_integrator >>= 6;
+//                uint8_t this_byte = vw_symbol_6to4(vw_rx_bits & 0x3f);
+//                this_byte <<= 4;
+//                this_byte |= this_byte;
 
                 // The first decoded byte is the byte count of the following message
                 // the count includes the byte count and the 2 trailing FCS bytes
@@ -349,6 +349,7 @@ void vw_pll(void)
             vw_rx_bit_count = 0;
             vw_rx_len = 0;
             vw_rx_done = 0; // Too bad if you missed the last message
+            LED_PORT=1;
         }
         
         vw_rx_integrator = 0; // Clear the integral for the next cycle

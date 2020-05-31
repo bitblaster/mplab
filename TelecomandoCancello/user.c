@@ -27,11 +27,11 @@ void InitApp(void)
     OSCCONbits.SCS=1; // System Clock Select (1=INTERNAL)
     OSCCONbits.IRCF=0b110; // IRCF=110 -> 4MHz
 #endif
-    __delay_ms(100);
+    //__delay_ms(100);
     GPIO=0;
 
     // Registro TRISIO (quali porte input e quali output)
-    TRISIO=0b00010001; // GP0 e GP4 input
+    TRISIO=0b00000000; // Tutto output
 
     CMCONbits.CM=0b111; // Comparatore disattivato
     ANSEL=0; // Porte impostate tutte su digitale
@@ -42,7 +42,7 @@ void InitApp(void)
     OPTION_REGbits.PSA=0; // prescaler attivo su Timer0
     OPTION_REGbits.PS=0b111; // prescaler per Timer0 impostato a 1:256. Timer0 fa ~61 interrupt/sec
 #endif
-    OPTION_REGbits.nGPPU=0; // GPIO pull-ups are enabled by individual port latch values in WPU register
+    OPTION_REGbits.nGPPU=1; // GPIO pull-ups are disabled
 
     // Registro INTCON
     INTCON=0;
@@ -61,20 +61,7 @@ void InitApp(void)
     
     // Registro WPU (weak pull-up)
     // Le configurazioni dei weak pull-up devono stare dopo quelle del TRISIO
-    WPU=0b00000001; // weak pull-up abilitati al su GP0 e GP1
+    WPU=0b00000000; // weak pull-up abilitati al su GP0 e GP1
 
     GPIO=0;
-}
-
-unsigned char getOutputPortValue(void) {
-    return outputValue;
-}
-
-void setOutputPortValue(unsigned char value) {
-    outputValue=value;
-    OUTPUT_PORT=value;
-}
-
-void restoreOutputValue(void) {
-    OUTPUT_PORT=outputValue;
 }
