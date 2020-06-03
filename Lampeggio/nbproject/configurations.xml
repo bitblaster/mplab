@@ -193,6 +193,9 @@
         <property key="uart9io.outputfile" value=""/>
         <property key="uart9io.uartioenabled" value="false"/>
       </Simulator>
+      <XC8-CO>
+        <property key="coverage-enable" value=""/>
+      </XC8-CO>
       <XC8-config-global>
         <property key="advanced-elf" value="true"/>
         <property key="output-file-format" value="-mcof,+elf"/>
