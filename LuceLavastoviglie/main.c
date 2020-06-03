@@ -67,9 +67,8 @@ void InitApp(void) {
     //OPTION_REGbits.PS0=0; 
 
     // Registro INTCON
-    INTCONbits.GIE=1;
     INTCONbits.GPIE=1;
-    INTCONbits.T0IE=1;  
+    INTCONbits.T0IE=1;
     
     IOC3=1; // Interrupt on change abilitato su GP3
     
@@ -81,14 +80,14 @@ void InitApp(void) {
 }
 
 void __interrupt () isr() {
-    static bool beeperSignal=true; //false
+    static bool beeperSignal=false;
     static unsigned char beeperCounter=0; // counter (in blocks of 25ms)
     static unsigned char silenceCounter=0; // counter (in blocks of 25ms)
     static unsigned char lastSilenceCounter=0;
     static unsigned char countReset=0; // counter (in blocks of 25ms)
 
     if(INTCONbits.T0IF) {
-        TMR0=61; // 1us*(256-195)* prescaler(128) ~= 25ms
+        TMR0=61; // 1us*(256-61)* prescaler(128) ~= 25ms
         if(beeperSignal) {
             if(beeperCounter < THRESHOLD_MAX_COUNTERS)
                 beeperCounter++;
@@ -104,7 +103,6 @@ void __interrupt () isr() {
     
             if(beeperCounter > THRESHOLD_FINISH_BEEP) {
                 washingState=WASHING_STATE_FINISHED;
-                LED_ON;
             }
             else if(beeperCounter > THRESHOLD_RESET_START_BEEP) {
                 if(lastSilenceCounter > THRESHOLD_SILENCE_BEFORE_START) {
@@ -141,20 +139,15 @@ void __interrupt () isr() {
 }
 
 void main(void) {
-    static __eeprom unsigned char savedWashingState=WASHING_STATE_RESET;
-    unsigned char lastWashingState=WASHING_STATE_RESET;
-
     InitApp();
     
+    // Probabilmente questo delay non serve ma nella lavastoviglie 
+    // forse la tensione è instabile e così attivo gli interrupt dopo un po'
+    __delay_ms(500);
     GPIO=0;
-    // Restore state from eeprom
-    washingState = lastWashingState = savedWashingState;
+    INTCONbits.GIE=1;
     
-    if(washingState == WASHING_STATE_FINISHED)
-        LED_ON;
-    else
-        LED_OFF;
-    
+    washingState=WASHING_STATE_RESET;
     while (1) {        
         switch(washingState) {
             case WASHING_STATE_RESET:
@@ -170,13 +163,7 @@ void main(void) {
                 __delay_ms(2000);
                 break;
             case WASHING_STATE_FINISHED:
-                if(washingState != lastWashingState)
-                    LED_ON;
-        }
-        
-        if(washingState != lastWashingState) {
-            savedWashingState = washingState;
-            lastWashingState = washingState;
+                LED_ON;
         }
     }
 }
