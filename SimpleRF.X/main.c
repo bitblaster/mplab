@@ -5,9 +5,7 @@
  * Created on 1 giugno 2020, 23.03
  */
 
-
 #include <xc.h>
-//#include <12f683.cgen.inc>
 #include <stdint.h>        /* For uint8_t definition */
 #include <stdbool.h>       /* For true/false definition */
 
@@ -26,65 +24,103 @@
 #pragma config FCMEN = ON       // Fail-Safe Clock Monitor Enabled bit (Fail-Safe Clock Monitor is enabled)
 
 #define _XTAL_FREQ 8000000
-//#define __delay_ms(x) _delay((unsigned long)((x)*(_XTAL_FREQ/4000.0)))
 
 //#define INPUT_SEND GP0
 #define OUTPUT_SEND GP2
 #define INPUT_RECEIVE GP1
 #define OUTPUT_RECEIVE GP5
 
-uint32_t remote_code;
+typedef struct _message {
+    uint8_t address;
+    uint8_t command;
+} message;
 
-bool receive_signal() {
-    int8_t i;
+uint8_t receive_byte() {
+    uint8_t ret=0;
+    uint8_t count=0;
+    for (uint8_t i = 0; i < 8; i++) {
+        count = 0;
+        while (INPUT_RECEIVE && count < 20) {
+            count++;
+            __delay_us(50);
+        }
+        if (count > 15 || count < 7) // NEC protocol?
+            return false;
+
+        count = 0;
+        while (!INPUT_RECEIVE && count < 50) {
+            count++;
+            __delay_us(50);
+        }
+        if (count > 40 || count < 7) // NEC protocol?
+            return false;
+
+        if (count > 20) // If space width > 1ms
+            ret |= (1 << i); // Write 1 to bit (31 - i)
+        else // If space width < 1ms
+            ret &= ~(1 << i); // Write 0 to bit (31 - i)
+    }
+
+    return ret;
+}
+
+message receive_message() {
+    message ret = { 0, 0 };
     uint16_t count = 0;
+
     // Check 9ms pulse (remote control sends logic high)
     while (INPUT_RECEIVE && count < 100) {
         count++;
         __delay_ms(1);
     }
     if (count > 12 || count < 5)
-        return false;
+        return ret;
     
     count = 0;
-    // Check 4.5ms space (remote control sends logic low)
+    // Check 4.q5ms space (remote control sends logic low)
     while (!INPUT_RECEIVE && (count < 10000)) {
         count++;
         __delay_us(100);
     }
     if ((count > 60) || (count < 22)) // NEC protocol?
-        return false;
+        return ret;
     
     // Read message (32 bits)
-    uint8_t *byte=(uint8_t *)&remote_code;
-    for(uint8_t j=0; j<sizeof(remote_code); j++, byte++) {
-        for (i = 0; i < 8; i++) {
-            count = 0;
-            while (INPUT_RECEIVE && count < 20) {
-                count++;
-                __delay_us(50);
-            }
-            if (count > 15 || count < 7) // NEC protocol?
-                return false;
-            
-            count = 0;
-            while (!INPUT_RECEIVE && count < 50) {
-                count++;
-                __delay_us(50);
-            }
-            if (count > 40 || count < 7) // NEC protocol?
-                return false;
-            
-            if (count > 20) // If space width > 1ms
-                *byte |= (1 << i); // Write 1 to bit (31 - i)
-            else // If space width < 1ms
-                *byte &= ~(1 << i); // Write 0 to bit (31 - i)
-        }
+
+    ret.address=receive_byte();
+    if(ret.address != ~receive_byte()) {
+        ret.address = 0;
+        return ret;
     }
-    return true;
+
+    ret.command=receive_byte();
+    if(ret.command != ~receive_byte()) {
+        ret.address = 0;
+        return ret;
+    }
+    
+    return ret;
 }
 
-void send_signal(uint32_t number) {
+void send_byte(uint8_t byte) {
+    for (uint8_t i = 0; i < 8; i++) {
+        // If bit is 1 send 560us pulse and 1680us space
+        if (byte & (1 << i)) {
+            OUTPUT_SEND = 1;
+            __delay_us(560);
+            OUTPUT_SEND = 0;
+            __delay_us(1680);
+        }// If bit is 0 send 560us pulse and 560us space
+        else {
+            OUTPUT_SEND = 1;
+            __delay_us(560);
+            OUTPUT_SEND = 0;
+            __delay_us(560);
+        }
+    }
+}
+
+void send_message(message msg) {
     uint8_t i;
     // Send 9ms pulse
     OUTPUT_SEND = 1;
@@ -92,25 +128,13 @@ void send_signal(uint32_t number) {
     // Send 4.5ms space
     OUTPUT_SEND = 0;
     __delay_us(4500);
+    
     // Send data
-    uint8_t *byte=(uint8_t *)&number;
-    for(uint8_t j=0; j<sizeof(number); j++, byte++) {
-        for (i = 0; i < 8; i++) {
-            // If bit is 1 send 560us pulse and 1680us space
-            if (*byte & (1 << i)) {
-                OUTPUT_SEND = 1;
-                __delay_us(560);
-                OUTPUT_SEND = 0;
-                __delay_us(1680);
-            }// If bit is 0 send 560us pulse and 560us space
-            else {
-                OUTPUT_SEND = 1;
-                __delay_us(560);
-                OUTPUT_SEND = 0;
-                __delay_us(560);
-            }
-        }
-    }
+    send_byte(msg.address);
+    send_byte(~msg.address);
+    send_byte(msg.command);
+    send_byte(~msg.command);
+    
     // Send end bit
     OUTPUT_SEND = 1;
     __delay_us(560);
@@ -162,24 +186,25 @@ void main() {
         OUTPUT_SEND=0;
         __delay_ms(500);
     }
-    //send_signal(0x40BF00FF);
+    
+    message msgToSend = {.address=0x23, .command=0x58}; // numeri a caso
+    
     while (true) {
         //while (!INPUT_SEND) {
             for (int i = 0; i < 1; i++) { // mettere 3!
-                send_signal(0x40BF00FF);
+                send_message(msgToSend);
                 __delay_ms(10);
             }
             __delay_ms(1000);
         //}
-        /*
+        
         if(INPUT_RECEIVE) {
-            if (receive_signal()) {
-                if (remote_code == 0x40BF00FF) {
-                    OUTPUT_RECEIVE=1;
-                    __delay_ms(100);
-                    OUTPUT_RECEIVE=0;
-                }
+            message recv = receive_message();
+            if (recv.address == msgToSend.address && recv.command == msgToSend.command) {
+                OUTPUT_RECEIVE=1;
+                __delay_ms(100);
+                OUTPUT_RECEIVE=0;
             }
-        }*/
+        }
     }
 }
