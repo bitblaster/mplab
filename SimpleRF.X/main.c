@@ -4,16 +4,14 @@
  *
  * Created on 1 giugno 2020, 23.03
  */
+#ifdef _12F683
+    #pragma config FOSC = INTOSCIO // Oscillator Selection (INTOSC oscillator: I/O function on CLKIN pin)
+#endif
 
-#include <xc.h>
-#include <stdint.h>        /* For uint8_t definition */
-#include <stdbool.h>       /* For true/false definition */
+#ifdef _12F1840
+    #pragma config FOSC = INTOSC // Oscillator Selection (INTOSC oscillator: I/O function on CLKIN pin)
+#endif
 
-// 5-Channel RF remote control using PIC18F4550 transmitter CCS C code
-// http://ccspicc.blogspot.com/
-// electronnote@gmail.com
-
-#pragma config FOSC = INTOSCIO  // Oscillator Selection bits (INTOSCIO oscillator: I/O function on RA4/OSC2/CLKOUT pin, I/O function on RA5/OSC1/CLKIN)
 #pragma config WDTE = OFF       // Watchdog Timer Enable bit (WDT disabled)
 #pragma config PWRTE = ON       // Power-up Timer Enable bit (PWRT disabled)
 #pragma config MCLRE = OFF      // MCLR Pin Function Select bit (MCLR pin function is digital input, MCLR internally tied to VDD)
@@ -23,21 +21,17 @@
 #pragma config IESO = OFF       // Internal External Switchover bit (Internal External Switchover mode is disabled)
 #pragma config FCMEN = ON       // Fail-Safe Clock Monitor Enabled bit (Fail-Safe Clock Monitor is enabled)
 
-#define _XTAL_FREQ 8000000
+#include "user.h"
+#include "g8_protocol.h"
+#include "nec_protocol.h"
+#include "cancello_protocol.h"
 
-//#define INPUT_SEND GP0
-#define OUTPUT_SEND GP2
-#define INPUT_RECEIVE GP1
-#define OUTPUT_RECEIVE GP5
+nec_message msgToSend = {0x23, 0x5B}; // numeri a caso
 
-typedef struct _message {
-    uint8_t address;
-    uint8_t command;
-} message;
-
-uint8_t receive_byte() {
-    uint8_t ret=0;
-    uint8_t count=0;
+/*
+uint8_t receive_byte_nec() {
+    uint8_t ret = 0;
+    uint8_t count = 0;
     for (uint8_t i = 0; i < 8; i++) {
         count = 0;
         while (INPUT_RECEIVE && count < 20) {
@@ -64,8 +58,8 @@ uint8_t receive_byte() {
     return ret;
 }
 
-message receive_message() {
-    message ret = { 0, 0 };
+message receive_message_nec() {
+    message ret = {0, 0};
     uint16_t count = 0;
 
     // Check 9ms pulse (remote control sends logic high)
@@ -75,7 +69,7 @@ message receive_message() {
     }
     if (count > 12 || count < 5)
         return ret;
-    
+
     count = 0;
     // Check 4.q5ms space (remote control sends logic low)
     while (!INPUT_RECEIVE && (count < 10000)) {
@@ -84,66 +78,37 @@ message receive_message() {
     }
     if ((count > 60) || (count < 22)) // NEC protocol?
         return ret;
-    
+
     // Read message (32 bits)
 
-    ret.address=receive_byte();
-    if(ret.address != ~receive_byte()) {
+    ret.address = receive_byte();
+    if (ret.address != ~receive_byte()) {
         ret.address = 0;
         return ret;
     }
 
-    ret.command=receive_byte();
-    if(ret.command != ~receive_byte()) {
+    ret.command = receive_byte();
+    if (ret.command != ~receive_byte()) {
         ret.address = 0;
         return ret;
     }
-    
+
     return ret;
 }
-
-void send_byte(uint8_t byte) {
-    for (uint8_t i = 0; i < 8; i++) {
-        // If bit is 1 send 560us pulse and 1680us space
-        if (byte & (1 << i)) {
-            OUTPUT_SEND = 1;
-            __delay_us(560);
-            OUTPUT_SEND = 0;
-            __delay_us(1680);
-        }// If bit is 0 send 560us pulse and 560us space
-        else {
-            OUTPUT_SEND = 1;
-            __delay_us(560);
-            OUTPUT_SEND = 0;
-            __delay_us(560);
-        }
-    }
-}
-
-void send_message(message msg) {
-    uint8_t i;
-    // Send 9ms pulse
-    OUTPUT_SEND = 1;
-    __delay_ms(9);
-    // Send 4.5ms space
-    OUTPUT_SEND = 0;
-    __delay_us(4500);
-    
-    // Send data
-    send_byte(msg.address);
-    send_byte(~msg.address);
-    send_byte(msg.command);
-    send_byte(~msg.command);
-    
-    // Send end bit
-    OUTPUT_SEND = 1;
-    __delay_us(560);
-    OUTPUT_SEND = 0;
-    __delay_us(560);
-}
+*/
 
 void InitApp(void) {
-    OSCCONbits.IRCF = 0b111;
+#ifndef TEST
+
+#ifdef _12F683
+    OSCCONbits.IRCF = 0b111; // 111=8MHz
+        //TEST!!!!
+    //OSCCONbits.IRCF = 0b100; // 111=8MHz
+    //TEST!!!!
+    GPIO = 0;
+    ANSEL = 0;
+    CMCON0bits.CM = 0b111; // Comparator disabled
+    
     // Registro TRISIO (quali porte input e quali output)
     // default: --11 1111
     // TRISIO=0b00001000; // singola impostazione, occupa meno spazio ma è meno chiaro
@@ -154,57 +119,204 @@ void InitApp(void) {
     TRISIObits.TRISIO4 = 0;
     TRISIObits.TRISIO5 = 0;
 
-    SCS = 1;
 
-    ANSEL = 0;
-    CMCON0 = 0;
+    SCS = 1;
 
     // OPTION_REG ? OPTION REGISTER (ADDRESS: 81h)
     // default: 1111 1111
     // Note: To achieve a 1:1 prescaler assignment for TMR0, assign the prescaler to the WDT bysetting PSA bit to 1 (OPTION<3>).
     // nGPPU INTEDG T0CS T0SE PSA PS2 PS1 PS0
-    OPTION_REG = 0b00000000; // singola impostazione, occupa meno spazio ma è meno chiaro
-
+    //OPTION_REG = 0b00000000; // singola impostazione, occupa meno spazio ma è meno chiaro
+    OPTION_REGbits.nGPPU = 1;
+    OPTION_REGbits.T0CS = 0;
+    OPTION_REGbits.T0SE = 0;
+    OPTION_REGbits.PSA = 0;
+    //OPTION_REGbits.PS = 0b010; // prescaler 1:8
+    //OPTION_REGbits.PS = 0b001; // prescaler 1:4
+    OPTION_REGbits.PS2=0;
+    OPTION_REGbits.PS1=1;
+    OPTION_REGbits.PS0=0;
+        
     // Registro INTCON
-    INTCON = 0;
+    INTCONbits.GPIE=1;
+    INTCONbits.T0IE=0;
+    INTCONbits.T0IF=0;
+    INTCONbits.PEIE=1;    
+    
+    // Timer1 Registers: 
+    // Prescaler=1:2; TMR1 Preset=0; Freq=15.25879Hz; Period=65.536 ms
+    T1CONbits.T1CKPS = 0b01;// bits 5-4  Prescaler Rate Select bits 
+    //TEST!!!!
+    //T1CONbits.T1CKPS = 0b00;// bits 5-4  Prescaler Rate Select bits 
+    //TEST!!!!
+    T1CONbits.T1OSCEN = 0;// bit 3 Timer1 Oscillator Enable Control: bit 0=off
+    T1CONbits.nT1SYNC = 1;// bit 2 Timer1 External Clock Input Synchronization Control bit: 1=Do not synchronize external clock input
+    T1CONbits.TMR1CS  = 0;// bit 1 Timer1 Clock Source Select bit: 0=Internal clock (FOSC/4) / 1 = External clock from pin T1CKI (on the rising edge)
+    T1CONbits.TMR1ON  = 1;// bit 0 enables timer
+    TMR1 = 0;     // preset for timer1 register
+    
+    PIE1bits.TMR1IE=1;
+    
+    IOC1=1; // Interrupt on change abilitato su GP4
 
     // Registro WPU (weak pull-up)
     // Le configurazioni dei weak pull-up devono stare dopo quelle del TRISIO
     WPU = 0b0000000;
+#elif defined(_12F1840) || defined(_12F1822)
+    OSCCONbits.IRCF = 0b1110; // 8MHz  internal clock
+    PORTA=0;
+    ANSELA = 0; // NO Analog
+    TRISIObits.TRISIO0 = 0;
+    TRISIObits.TRISIO1 = 1;
+    TRISIObits.TRISIO2 = 0;
+    TRISIObits.TRISIO3 = 1;
+    TRISIObits.TRISIO4 = 0;
+    TRISIObits.TRISIO5 = 0;
+    OPTION_REG = 0b10000011; // TMR0 @ Fosc/4/16 ( need to interrupt on every 80 clock 16*5)
+    
+    //WPUA		= 0b00111011;	// pull-up ON
+    TRISA = 0b00000001; // ALL OUTPUT except RA0
+    INTCON = 0b00000000; // no interrupt
 
-    INTCONbits.T0IF = 0;
+    //  A/D & FVR OFF
+    ADCON0 = 0;
+    FVRCON = 0;
+#endif
+
+#endif
 }
+
+void __interrupt() isr() {
+#ifndef TEST
+    static uint8_t timingValid=false;
+    if(PIR1bits.TMR1IF) {
+        /* Timer di 1 sec come test
+        TMR1 = 15536;
+        conta++;
+        if(conta>=20) {
+            OUTPUT_LED=!OUTPUT_LED;
+            conta=0;
+         }*/
+        //OUTPUT_LED=!OUTPUT_LED;
+        timingValid = false;
+        PIR1bits.TMR1IF=0;
+    }
+    
+    if(INTCONbits.GPIF) {
+        if(timingValid) {
+            uint16_t duration = TMR1;
+            TMR1=0;
+            uint8_t rising = INPUT_RECEIVE;
+            //if((duration) > 1000)
+            //    OUTPUT_LED=!OUTPUT_LED;
+            decode_g8(rising, duration);
+            decode_nec(rising, duration);
+            /*if(duration > 8600 && duration < 9400) {
+            //if(duration > 1075 && duration < 1175) {
+                OUTPUT_LED=!OUTPUT_LED;
+            }*/
+        }
+        
+        timingValid = true;
+        INTCONbits.GPIF=0;
+    }
+#endif
+}
+
+void received_g8_message(const g8_message *msg) {
+    if (msg->system == 0xB740B4 && msg->address == 0x83 && (msg->command == 0x11 || msg->command == 0x1E || msg->command == 0x33 || msg->command == 0x3C)) {
+        OUTPUT_LED = 1;
+        __delay_ms(1000);
+        OUTPUT_LED = 0;
+        send_cancello(0x130BDA);
+    } else {
+        OUTPUT_LED = 1;
+        __delay_ms(300);
+        OUTPUT_LED = 0;
+        __delay_ms(300);
+        OUTPUT_LED = 1;
+        __delay_ms(300);
+        OUTPUT_LED = 0;
+    }
+}
+
+void received_nec_message(const nec_message *msg) {
+    if (msg->address == msgToSend.address && msg->command == msgToSend.command) {
+        OUTPUT_LED = 1;
+        __delay_ms(2000);
+        OUTPUT_LED = 0;
+    } else {
+        OUTPUT_LED = 1;
+        __delay_ms(800);
+        OUTPUT_LED = 0;
+        __delay_ms(800);
+        OUTPUT_LED = 1;
+        __delay_ms(800);
+        OUTPUT_LED = 0;
+    }
+}
+
+#ifdef TEST
+void decode1_g8() {
+    decode_g8(0, 650);decode_g8(1, 430);
+}
+
+void decode0_g8() {
+    decode_g8(0, 300);decode_g8(1, 780);
+}
+
+void decode1_nec() {
+    decode_nec(0, 560);decode_nec(1, 1680);
+}
+
+void decode0_nec() {
+    decode_nec(0, 560);decode_nec(1, 560);
+}
+#endif
 
 void main() {
     InitApp();
-    GPIO = 0;
-    for(uint8_t i=0; i<3; i++) {
-        OUTPUT_RECEIVE=1;
-        OUTPUT_SEND=1;
-        __delay_ms(500);
-        OUTPUT_RECEIVE=0;
-        OUTPUT_SEND=0;
-        __delay_ms(500);
+
+#ifdef TEST
+    // Messaggio in protocollo G8: B7 40 B4 81 33
+    decode_g8(1, 1);decode_g8(0, 4770);decode_g8(1, 1550);
+    decode1_g8();decode0_g8();decode1_g8();decode1_g8();decode0_g8();decode1_g8();decode1_g8();decode1_g8();
+    decode0_g8();decode1_g8();decode0_g8();decode0_g8();decode0_g8();decode0_g8();decode0_g8();decode0_g8();
+    decode1_g8();decode0_g8();decode1_g8();decode1_g8();decode0_g8();decode1_g8();decode0_g8();decode0_g8();
+    decode1_g8();decode0_g8();decode0_g8();decode0_g8();decode0_g8();decode0_g8();decode1_g8();decode1_g8();
+    decode0_g8();decode0_g8();decode1_g8();decode1_g8();decode0_g8();decode0_g8();decode1_g8();decode1_g8();
+
+    // Messaggio in protocollo NEC: 23 5B
+    decode_nec(1, 1);decode_nec(0, 9000);decode_nec(1, 4500);  
+    decode1_nec();decode1_nec();decode0_nec();decode0_nec();decode0_nec();decode1_nec();decode0_nec();decode0_nec();
+    decode0_nec();decode0_nec();decode1_nec();decode1_nec();decode1_nec();decode0_nec();decode1_nec();decode1_nec();
+    decode1_nec();decode1_nec();decode0_nec();decode1_nec();decode1_nec();decode0_nec();decode1_nec();decode0_nec();
+    decode0_nec();decode0_nec();decode1_nec();decode0_nec();decode0_nec();decode1_nec();decode0_nec();decode1_nec();
+    decode0_nec();
+#endif
+    
+    for (uint8_t i = 0; i < 3; i++) {
+        OUTPUT_LED = 1;
+        __delay_ms(200);
+        OUTPUT_LED = 0;
+        __delay_ms(200);
     }
+
+//#define INVIO
+#define RICEZIONE
     
-    message msgToSend = {.address=0x23, .command=0x58}; // numeri a caso
-    
+#ifdef RICEZIONE
+    INTCONbits.GIE=1;
+#endif
+
     while (true) {
+#ifdef INVIO
+        send_message_nec(&msgToSend);
+        __delay_ms(5000);
+#endif        
         //while (!INPUT_SEND) {
-            for (int i = 0; i < 1; i++) { // mettere 3!
-                send_message(msgToSend);
-                __delay_ms(10);
-            }
-            __delay_ms(1000);
+            //
         //}
-        
-        if(INPUT_RECEIVE) {
-            message recv = receive_message();
-            if (recv.address == msgToSend.address && recv.command == msgToSend.command) {
-                OUTPUT_RECEIVE=1;
-                __delay_ms(100);
-                OUTPUT_RECEIVE=0;
-            }
-        }
     }
 }
+
