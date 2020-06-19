@@ -4,20 +4,20 @@
 # NOCDDL
 #
 CND_BASEDIR=`pwd`
-# Debug configuration
-CND_ARTIFACT_DIR_Debug=dist/Debug/production
-CND_ARTIFACT_NAME_Debug=SimpleRF.X.production.hex
-CND_ARTIFACT_PATH_Debug=dist/Debug/production/SimpleRF.X.production.hex
-CND_PACKAGE_DIR_Debug=${CND_DISTDIR}/Debug/package
-CND_PACKAGE_NAME_Debug=simplerf.x.tar
-CND_PACKAGE_PATH_Debug=${CND_DISTDIR}/Debug/package/simplerf.x.tar
-# Release configuration
-CND_ARTIFACT_DIR_Release=dist/Release/production
-CND_ARTIFACT_NAME_Release=SimpleRF.X.production.hex
-CND_ARTIFACT_PATH_Release=dist/Release/production/SimpleRF.X.production.hex
-CND_PACKAGE_DIR_Release=${CND_DISTDIR}/Release/package
-CND_PACKAGE_NAME_Release=simplerf.x.tar
-CND_PACKAGE_PATH_Release=${CND_DISTDIR}/Release/package/simplerf.x.tar
+# 12F1840 configuration
+CND_ARTIFACT_DIR_12F1840=dist/12F1840/production
+CND_ARTIFACT_NAME_12F1840=SimpleRF.X.production.hex
+CND_ARTIFACT_PATH_12F1840=dist/12F1840/production/SimpleRF.X.production.hex
+CND_PACKAGE_DIR_12F1840=${CND_DISTDIR}/12F1840/package
+CND_PACKAGE_NAME_12F1840=simplerf.x.tar
+CND_PACKAGE_PATH_12F1840=${CND_DISTDIR}/12F1840/package/simplerf.x.tar
+# 12F683 configuration
+CND_ARTIFACT_DIR_12F683=dist/12F683/production
+CND_ARTIFACT_NAME_12F683=SimpleRF.X.production.hex
+CND_ARTIFACT_PATH_12F683=dist/12F683/production/SimpleRF.X.production.hex
+CND_PACKAGE_DIR_12F683=${CND_DISTDIR}/12F683/package
+CND_PACKAGE_NAME_12F683=simplerf.x.tar
+CND_PACKAGE_PATH_12F683=${CND_DISTDIR}/12F683/package/simplerf.x.tar
 # Simulator configuration
 CND_ARTIFACT_DIR_Simulator=dist/Simulator/production
 CND_ARTIFACT_NAME_Simulator=SimpleRF.X.production.hex

@@ -6,21 +6,39 @@
  */
 #ifdef _12F683
     #pragma config FOSC = INTOSCIO // Oscillator Selection (INTOSC oscillator: I/O function on CLKIN pin)
+    #pragma config WDTE = OFF       // Watchdog Timer Enable bit (WDT disabled)
+    #pragma config PWRTE = ON       // Power-up Timer Enable bit (PWRT disabled)
+    #pragma config MCLRE = OFF      // MCLR Pin Function Select bit (MCLR pin function is digital input, MCLR internally tied to VDD)
+    #pragma config CP = OFF         // Code Protection bit (Program memory code protection is disabled)
+    #pragma config CPD = OFF        // Data Code Protection bit (Data memory code protection is disabled)
+    #pragma config BOREN = ON       // Brown Out Detect (BOR enabled)
+    #pragma config IESO = OFF       // Internal External Switchover bit (Internal External Switchover mode is disabled)
+    #pragma config FCMEN = ON       // Fail-Safe Clock Monitor Enabled bit (Fail-Safe Clock Monitor is enabled)
 #endif
 
 #ifdef _12F1840
-    #pragma config FOSC = INTOSC // Oscillator Selection (INTOSC oscillator: I/O function on CLKIN pin)
+    // CONFIG1
+    #pragma config FOSC = INTOSC    // Oscillator Selection->INTOSC oscillator: I/O function on CLKIN pin
+    #pragma config WDTE = OFF    // Watchdog Timer Enable->WDT disabled
+    #pragma config PWRTE = OFF    // Power-up Timer Enable->PWRT disabled
+    #pragma config MCLRE = ON    // MCLR Pin Function Select->MCLR/VPP pin function is MCLR
+    #pragma config CP = OFF    // Flash Program Memory Code Protection->Program memory code protection is disabled
+    #pragma config CPD = OFF    // Data Memory Code Protection->Data memory code protection is disabled
+    #pragma config BOREN = ON    // Brown-out Reset Enable->Brown-out Reset enabled
+    #pragma config CLKOUTEN = OFF    // Clock Out Enable->CLKOUT function is disabled. I/O or oscillator function on the CLKOUT pin
+    #pragma config IESO = OFF    // Internal/External Switchover->Internal/External Switchover mode is enabled
+    #pragma config FCMEN = ON    // Fail-Safe Clock Monitor Enable->Fail-Safe Clock Monitor is enabled
+
+    // CONFIG2
+    #pragma config WRT = OFF    // Flash Memory Self-Write Protection->Write protection off
+    #pragma config PLLEN = OFF    // PLL Enable->4x PLL disabled
+    #pragma config STVREN = ON    // Stack Overflow/Underflow Reset Enable->Stack Overflow or Underflow will cause a Reset
+    #pragma config BORV = LO    // Brown-out Reset Voltage Selection->Brown-out Reset Voltage (Vbor), low trip point selected.
+    #pragma config LVP = OFF    // Low-Voltage Programming Enable->Low-voltage programming enabled
 #endif
 
-#pragma config WDTE = OFF       // Watchdog Timer Enable bit (WDT disabled)
-#pragma config PWRTE = ON       // Power-up Timer Enable bit (PWRT disabled)
-#pragma config MCLRE = OFF      // MCLR Pin Function Select bit (MCLR pin function is digital input, MCLR internally tied to VDD)
-#pragma config CP = OFF         // Code Protection bit (Program memory code protection is disabled)
-#pragma config CPD = OFF        // Data Code Protection bit (Data memory code protection is disabled)
-#pragma config BOREN = ON       // Brown Out Detect (BOR enabled)
-#pragma config IESO = OFF       // Internal External Switchover bit (Internal External Switchover mode is disabled)
-#pragma config FCMEN = ON       // Fail-Safe Clock Monitor Enabled bit (Fail-Safe Clock Monitor is enabled)
-
+#include <stdint.h>        /* For uint8_t definition */
+#include <stdbool.h>       /* For true/false definition */
 #include "user.h"
 #include "g8_protocol.h"
 #include "nec_protocol.h"
@@ -99,126 +117,63 @@ message receive_message_nec() {
 
 void InitApp(void) {
 #ifndef TEST
-
-#ifdef _12F683
-    OSCCONbits.IRCF = 0b111; // 111=8MHz
-        //TEST!!!!
-    //OSCCONbits.IRCF = 0b100; // 111=8MHz
-    //TEST!!!!
-    GPIO = 0;
-    ANSEL = 0;
-    CMCON0bits.CM = 0b111; // Comparator disabled
     
-    // Registro TRISIO (quali porte input e quali output)
-    // default: --11 1111
-    // TRISIO=0b00001000; // singola impostazione, occupa meno spazio ma è meno chiaro
-    TRISIObits.TRISIO0 = 0;
-    TRISIObits.TRISIO1 = 1;
-    TRISIObits.TRISIO2 = 0;
-    TRISIObits.TRISIO3 = 1;
-    TRISIObits.TRISIO4 = 0;
-    TRISIObits.TRISIO5 = 0;
+    OSCILLATOR_SET_XTAL_FREQ(_XTAL_FREQ);
+            
+    ANALOG_DISABLE();
+    GPIO_SET_ALL_PIN_VALUES_AS_MASK(0);
+    GPIO_SET_ALL_PIN_MODES_AS_MASK(0);
+    GPIO_SET_PIN_MODE(INPUT_RECEIVE_PIN, 1);
 
+    IOC_SET_FLAG(INPUT_RECEIVE_PIN, 0);
+    IOC_ON_BOTH_EDGES(INPUT_RECEIVE_PIN);
 
-    SCS = 1;
+    IOC_ENABLE();
 
-    // OPTION_REG ? OPTION REGISTER (ADDRESS: 81h)
-    // default: 1111 1111
-    // Note: To achieve a 1:1 prescaler assignment for TMR0, assign the prescaler to the WDT bysetting PSA bit to 1 (OPTION<3>).
-    // nGPPU INTEDG T0CS T0SE PSA PS2 PS1 PS0
-    //OPTION_REG = 0b00000000; // singola impostazione, occupa meno spazio ma è meno chiaro
-    OPTION_REGbits.nGPPU = 1;
-    OPTION_REGbits.T0CS = 0;
-    OPTION_REGbits.T0SE = 0;
-    OPTION_REGbits.PSA = 0;
-    //OPTION_REGbits.PS = 0b010; // prescaler 1:8
-    //OPTION_REGbits.PS = 0b001; // prescaler 1:4
-    OPTION_REGbits.PS2=0;
-    OPTION_REGbits.PS1=1;
-    OPTION_REGbits.PS0=0;
-        
-    // Registro INTCON
-    INTCONbits.GPIE=1;
-    INTCONbits.T0IE=0;
-    INTCONbits.T0IF=0;
-    INTCONbits.PEIE=1;    
+    TIMER1_CONFIGURE_WITH_INTERNAL_OSCILLATOR();
     
-    // Timer1 Registers: 
-    // Prescaler=1:2; TMR1 Preset=0; Freq=15.25879Hz; Period=65.536 ms
-    T1CONbits.T1CKPS = 0b01;// bits 5-4  Prescaler Rate Select bits 
-    //TEST!!!!
-    //T1CONbits.T1CKPS = 0b00;// bits 5-4  Prescaler Rate Select bits 
-    //TEST!!!!
-    T1CONbits.T1OSCEN = 0;// bit 3 Timer1 Oscillator Enable Control: bit 0=off
-    T1CONbits.nT1SYNC = 1;// bit 2 Timer1 External Clock Input Synchronization Control bit: 1=Do not synchronize external clock input
-    T1CONbits.TMR1CS  = 0;// bit 1 Timer1 Clock Source Select bit: 0=Internal clock (FOSC/4) / 1 = External clock from pin T1CKI (on the rising edge)
-    T1CONbits.TMR1ON  = 1;// bit 0 enables timer
-    TMR1 = 0;     // preset for timer1 register
-    
-    PIE1bits.TMR1IE=1;
-    
-    IOC1=1; // Interrupt on change abilitato su GP4
-
-    // Registro WPU (weak pull-up)
-    // Le configurazioni dei weak pull-up devono stare dopo quelle del TRISIO
-    WPU = 0b0000000;
-#elif defined(_12F1840) || defined(_12F1822)
-    OSCCONbits.IRCF = 0b1110; // 8MHz  internal clock
-    PORTA=0;
-    ANSELA = 0; // NO Analog
-    TRISIObits.TRISIO0 = 0;
-    TRISIObits.TRISIO1 = 1;
-    TRISIObits.TRISIO2 = 0;
-    TRISIObits.TRISIO3 = 1;
-    TRISIObits.TRISIO4 = 0;
-    TRISIObits.TRISIO5 = 0;
-    OPTION_REG = 0b10000011; // TMR0 @ Fosc/4/16 ( need to interrupt on every 80 clock 16*5)
-    
-    //WPUA		= 0b00111011;	// pull-up ON
-    TRISA = 0b00000001; // ALL OUTPUT except RA0
-    INTCON = 0b00000000; // no interrupt
-
-    //  A/D & FVR OFF
-    ADCON0 = 0;
-    FVRCON = 0;
+#if _XTAL_FREQ == 8000000
+    TIMER1_SET_PRESCALER2();
+#elif _XTAL_FREQ == 500000
+    TIMER1_SET_PRESCALER1();
 #endif
+
+    //TIMER1_INTERRUPT_ENABLE();
+    TIMER1_ENABLE();
+    
+    WEAK_PULLUPS_GLOBAL_ENABLE(0);
+    WEAK_PULLUPS_SET_ALL_AS_MASK(0);
 
 #endif
 }
 
 void __interrupt() isr() {
 #ifndef TEST
-    static uint8_t timingValid=false;
-    if(PIR1bits.TMR1IF) {
-        /* Timer di 1 sec come test
-        TMR1 = 15536;
-        conta++;
-        if(conta>=20) {
-            OUTPUT_LED=!OUTPUT_LED;
-            conta=0;
-         }*/
-        //OUTPUT_LED=!OUTPUT_LED;
+    // L'interrupt non è necessario in quanto ci serve solo che timer1 conti e 
+    // sapere se va in overflow
+    /*static uint8_t timingValid=false;
+    if(TIMER1_FLAG) {
         timingValid = false;
-        PIR1bits.TMR1IF=0;
-    }
+        TIMER1_FLAG=0;
+    }*/
     
-    if(INTCONbits.GPIF) {
-        if(timingValid) {
-            uint16_t duration = TMR1;
+    if(IOC_FLAG) {
+        //if(timingValid) {
+        if(!TIMER1_FLAG) {
+#if _XTAL_FREQ == 8000000    
+            uint24_t duration = TMR1;
+#elif _XTAL_FREQ == 500000
+            uint24_t duration = TMR1<<3;
+#endif
             TMR1=0;
             uint8_t rising = INPUT_RECEIVE;
-            //if((duration) > 1000)
-            //    OUTPUT_LED=!OUTPUT_LED;
             decode_g8(rising, duration);
             decode_nec(rising, duration);
-            /*if(duration > 8600 && duration < 9400) {
-            //if(duration > 1075 && duration < 1175) {
-                OUTPUT_LED=!OUTPUT_LED;
-            }*/
         }
         
-        timingValid = true;
-        INTCONbits.GPIF=0;
+        //timingValid = true;
+        TIMER1_FLAG = 0;
+        IOC_FLAG = 0;
     }
 #endif
 }
@@ -310,6 +265,8 @@ void main() {
 #endif
 
     while (true) {
+        // TODO provare a inserire qui il ciclo di ricezione andando in polling sul pin di input anziché con l'interrupt
+        // TODO a 500kHz col 12F683 non va (col 12F1840 sì))
 #ifdef INVIO
         send_message_nec(&msgToSend);
         __delay_ms(5000);

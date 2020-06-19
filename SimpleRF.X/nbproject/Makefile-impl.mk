@@ -27,11 +27,11 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 PROJECTNAME=SimpleRF.X
 
 # Active Configuration
-DEFAULTCONF=Release
+DEFAULTCONF=12F1840
 CONF=${DEFAULTCONF}
 
 # All Configurations
-ALLCONFS=Debug Release Simulator 
+ALLCONFS=12F1840 12F683 Simulator 
 
 
 # build
@@ -45,16 +45,16 @@ ALLCONFS=Debug Release Simulator
 
 # clobber
 .clobber-impl: .clobber-pre .depcheck-impl
-	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=Debug clean
-	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=Release clean
+	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=12F1840 clean
+	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=12F683 clean
 	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=Simulator clean
 
 
 
 # all
 .all-impl: .all-pre .depcheck-impl
-	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=Debug build
-	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=Release build
+	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=12F1840 build
+	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=12F683 build
 	    ${MAKE} SUBPROJECTS=${SUBPROJECTS} CONF=Simulator build
 
 

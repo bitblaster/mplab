@@ -50,8 +50,12 @@ static void gotBit(const int value) {
     }
 }
 
-void decode_nec(const uint8_t risingEdge, const uint24_t duration) {
+void decode_nec(const uint8_t risingEdge, /*const */uint24_t duration) {
 
+    if(!risingEdge) {
+        duration++;
+    }
+    
     switch (status) {
         case STATUS_UNKNOWN:
             if (risingEdge) {

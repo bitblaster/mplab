@@ -13,32 +13,111 @@ extern "C" {
 #endif
 
 #include <xc.h>
-#include <stdint.h>        /* For uint8_t definition */
-#include <stdbool.h>       /* For true/false definition */
 
 #define _XTAL_FREQ 8000000
-//TEST!!!!
-//#define _XTAL_FREQ 1000000
-//TEST!!!!
+//#define _XTAL_FREQ 500000
 
+#if _XTAL_FREQ != 8000000 && _XTAL_FREQ != 500000
+    ERROR!
+#endif
+
+#define INPUT_RECEIVE_PIN 4
+#define OUTPUT_SEND_PIN 2
+#define OUTPUT_LED_PIN 5
+        
 #ifdef _12F683
+    #define OSCILLATOR_SET_XTAL_FREQ_8000000 { OSCCONbits.IRCF = 0b111; OSCCONbits.SCS = 1; }
+    #define OSCILLATOR_SET_XTAL_FREQ_500000 { OSCCONbits.IRCF = 0b100; OSCCONbits.SCS = 1; }
+    
+    #define GPIO_SET_ALL_PIN_VALUES_AS_MASK(VALUE) GPIO = VALUE
+   
+    #define GPIO_SET_ALL_PIN_MODES_AS_MASK(VALUE) TRISIO = VALUE
 
-    //#define INPUT_SEND GP0
-    #define INPUT_RECEIVE GP1
-    #define OUTPUT_SEND GP2
-    #define OUTPUT_LED GP5
+    #define _GPIO_SET_PIN_MODE(PIN, VALUE) TRISIObits.TRISIO##PIN = VALUE
+
+    #define WEAK_PULLUPS_SET_ALL_AS_MASK(VALUE) WPU = VALUE
+
+    #define _WEAK_PULLUP_ENABLE_PIN(PIN) WPUbits.WPU##PIN = 1
+
+    #define WEAK_PULLUPS_GLOBAL_ENABLE(VALUE) OPTION_REGbits.nGPPU = (!VALUE)
+
+    #define _IOC_ON_BOTH_EDGES(PIN) IOCbits.IOC##PIN = 1    
+
+    #define _IOC_SET_FLAG(PIN, VALUE) INTCONbits.GPIF = VALUE
+
+    #define _GET_PIN_NAME(PIN) GP##PIN
+
+    #define IOC_FLAG INTCONbits.GPIF
+
+    #define IOC_ENABLE() INTCONbits.GPIE=1
+
+    #define TIMER1_CONFIGURE_WITH_INTERNAL_OSCILLATOR() { TMR1GE = 0; T1CONbits.TMR1CS = 0; T1CONbits.T1OSCEN = 0; T1CONbits.nT1SYNC=1; }
+
+    #define TIMER1_FLAG PIR1bits.TMR1IF
+    
+    #define TIMER1_ENABLE() T1CONbits.TMR1ON = 1
+            
+    #define TIMER1_INTERRUPT_ENABLE() { TMR1 = 0; TIMER1_FLAG = 0; INTCONbits.PEIE=1; T1CONbits.TMR1ON = 1; PIE1bits.TMR1IE=1; }
+
+    #define TIMER1_SET_PRESCALER1() T1CONbits.T1CKPS = 0b00
+    #define TIMER1_SET_PRESCALER2() T1CONbits.T1CKPS = 0b01
+    #define TIMER1_SET_PRESCALER4() T1CONbits.T1CKPS = 0b10
+    #define TIMER1_SET_PRESCALER8() T1CONbits.T1CKPS = 0b11
+
+    #define ANALOG_DISABLE() { ANSEL = 0; CMCON0bits.CM = 0b111; }
+#elif defined(_12F1840)
+    #define OSCILLATOR_SET_XTAL_FREQ_8000000 { OSCCONbits.IRCF = 0b1110; OSCCONbits.SCS = 0b11; }
+    #define OSCILLATOR_SET_XTAL_FREQ_500000 { OSCCONbits.IRCF = 0b0111; OSCCONbits.SCS = 0b11; }
+    
+    #define GPIO_SET_ALL_PIN_VALUES_AS_MASK(VALUE) PORTA = VALUE
+
+    #define GPIO_SET_ALL_PIN_MODES_AS_MASK(VALUE) TRISA = VALUE
+
+    #define _GPIO_SET_PIN_MODE(PIN, VALUE) (TRISAbits.TRISA##PIN = VALUE)
+
+    #define WEAK_PULLUPS_SET_ALL_AS_MASK(VALUE) WPUA = VALUE
+
+    #define _WEAK_PULLUP_ENABLE_PIN(PIN) WPUAbits.WPU##PIN = 1
+
+    #define WEAK_PULLUPS_GLOBAL_ENABLE(VALUE) OPTION_REGbits.nWPUEN = (!VALUE)
+
+    #define _IOC_ON_BOTH_EDGES(PIN) { IOCAPbits.IOCAP##PIN = 1; IOCANbits.IOCAN##PIN = 1; }    
+
+    #define _IOC_SET_FLAG(PIN, VALUE) (IOCAFbits.IOCAF##PIN = VALUE)
+
+    #define _GET_PIN_NAME(PIN) RA##PIN
+
+    #define IOC_FLAG IOCAFbits.IOCAF4
+
+    #define IOC_ENABLE() INTCONbits.IOCIE=1
+
+    #define TIMER1_CONFIGURE_WITH_INTERNAL_OSCILLATOR() { T1GCON = 0; T1CONbits.TMR1CS = 0; T1CONbits.T1OSCEN = 0; T1CONbits.nT1SYNC = 1; }
+
+    #define TIMER1_FLAG PIR1bits.TMR1IF
+
+    #define TIMER1_ENABLE() T1CONbits.TMR1ON = 1
+
+    #define TIMER1_INTERRUPT_ENABLE() { TMR1 = 0; TIMER1_FLAG = 0; INTCONbits.PEIE=1; T1CONbits.TMR1ON = 1; PIE1bits.TMR1IE = 1; }
+
+    #define TIMER1_SET_PRESCALER1() T1CONbits.T1CKPS = 0b00
+    #define TIMER1_SET_PRESCALER2() T1CONbits.T1CKPS = 0b01
+    #define TIMER1_SET_PRESCALER4() T1CONbits.T1CKPS = 0b10
+    #define TIMER1_SET_PRESCALER8() T1CONbits.T1CKPS = 0b11
+
+    #define ANALOG_DISABLE() { ANSELA = 0; ADCON0 = 0; FVRCON = 0; APFCON = 0x00; LATA = 0x00; }
 #endif
 
-#ifdef _12F1840
-
-    #define OUTPUT_SEND RA2
-    #ifdef PRODUCTION
-        #define INPUT_RECEIVE RA1
-    #else
-        #define INPUT_RECEIVE RA4
-    #endif
-    #define OUTPUT_LED RA5
-#endif
+#define _OSCILLATOR_SET_XTAL_FREQ(frequency) OSCILLATOR_SET_XTAL_FREQ_##frequency
+#define OSCILLATOR_SET_XTAL_FREQ(frequency) _OSCILLATOR_SET_XTAL_FREQ(frequency)
+#define GPIO_SET_PIN_MODE(PIN, VALUE) _GPIO_SET_PIN_MODE(PIN, VALUE)
+#define WEAK_PULLUP_ENABLE_PIN(PIN) _WEAK_PULLUP_ENABLE_PIN(PIN)
+#define IOC_ON_BOTH_EDGES(PIN) _IOC_ON_BOTH_EDGES(PIN)
+#define IOC_SET_FLAG(PIN, VALUE) _IOC_SET_FLAG(PIN, VALUE)
+#define GET_PIN_NAME(PIN) _GET_PIN_NAME(PIN)
+            
+#define INPUT_RECEIVE GET_PIN_NAME(INPUT_RECEIVE_PIN)
+#define OUTPUT_SEND GET_PIN_NAME(OUTPUT_SEND_PIN)
+#define OUTPUT_LED GET_PIN_NAME(OUTPUT_LED_PIN)
 
 
 #ifdef	__cplusplus
